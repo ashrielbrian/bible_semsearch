@@ -1,2 +1,4 @@
 pandas==1.5.3
 tiktoken
+openai
+openai[embeddings]
