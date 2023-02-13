@@ -3,6 +3,7 @@ import openai
 from typing import List
 from dotenv import load_dotenv
 
+from tenacity import retry, retry_if_exception, wait_exponential, stop_after_attempt
 from sentence_transformers import SentenceTransformer
 
 from config import OPENAI_EMBEDDING_MODEL
@@ -16,6 +17,11 @@ def get_single_embedding(text: str, model=OPENAI_EMBEDDING_MODEL) -> List[float]
     return openai.Embedding.create(input=[text], model=model)["data"][0]["embedding"]
 
 
+@retry(
+    retry=retry_if_exception(openai.OpenAIError), 
+    wait=wait_exponential(multiplier=1, min=1, max=10), 
+    stop=stop_after_attempt(4)
+)
 def get_multi_embeddings(
     texts: List[str], model=OPENAI_EMBEDDING_MODEL
 ) -> List[List[float]]:
@@ -24,6 +30,7 @@ def get_multi_embeddings(
         data["embedding"]
         for data in openai.Embedding.create(input=texts, model=model)["data"]
     ]
+
 
 
 def get_st_transformer_embeddings(
