@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
 
-ST_EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+ST_EMBEDDING_MODEL = "all-mpnet-base-v2"
 OPENAI_EMBEDDING_MODEL = "text-embedding-ada-002"
 
 
