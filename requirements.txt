@@ -4,3 +4,5 @@ openai
 openai[embeddings]
 fastparquet
 torch
+sentence-transformers
+python-dotenv
