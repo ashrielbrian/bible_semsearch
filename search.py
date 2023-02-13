@@ -7,13 +7,12 @@ import pandas as pd
 
 from sentence_transformers import SentenceTransformer
 from embeddings import get_single_embedding
-
-ST_EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+from config import ST_EMBEDDING_MODEL
 
 
 class EmbeddingType(enum.Enum):
-    Ada = "ada"
-    miniLM = "minilm"
+    Ada = "oai_embeddings"
+    SentenceTransfomer = "st_embeddings"
 
 
 class SearchEngine:
@@ -22,32 +21,28 @@ class SearchEngine:
     def __init__(self, path: Path):
         self.df = pd.read_parquet(path, engine="fastparquet")
         self.model = SentenceTransformer(ST_EMBEDDING_MODEL)
+        self._device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def _get_query_vec(self, query: str, emb_type: EmbeddingType):
         if emb_type == EmbeddingType.Ada:
-            return torch.tensor(get_single_embedding(query))
-        elif emb_type == EmbeddingType.miniLM:
-            return self.model.encode(query, convert_to_tensor=True)
+            return torch.tensor(get_single_embedding(query)).to(self._device)
+        elif emb_type == EmbeddingType.SentenceTransfomer:
+            return self.model.encode(query, convert_to_tensor=True).to(self._device)
         else:
             raise Exception(f"No such embedding: {emb_type}")
 
     def _get_embeddings(self, emb_type: EmbeddingType):
-        if emb_type == EmbeddingType.Ada:
-            return torch.tensor(self.df["oai_embeddings"])
-        elif emb_type == EmbeddingType.miniLM:
-            return torch.tensor(self.df["minilm_embeddings"])
-        else:
-            raise Exception(f"No such embedding: {emb_type}")
+        return torch.tensor(self.df[emb_type.value]).to(self._device)
 
     def _get_search_results(
-        self, query_vec, embeddings, source: pd.DataFrame, k: int = 10, only_text=False
+        self, query_vec: torch.Tensor, embeddings: torch.Tensor, source: pd.DataFrame, k: int = 10, only_text=False
     ) -> List[Tuple[Any]]:
         """
         Cosine similarity: Ada embeddings are L2 normalized, so only require a dot product
         between the query and embedding vectors.
         """
         results = torch.topk(torch.matmul(embeddings, query_vec), k)
-        results = source.loc[results.indices][
+        results = source.loc[results.indices.cpu()][
             ["text"] if only_text else ["book", "chapter", "verse", "text"]
         ]
         return [tuple(np_row) for np_row in list(results.values)]
