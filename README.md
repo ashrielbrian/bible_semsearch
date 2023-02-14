@@ -24,6 +24,8 @@ Semantic search of the Bible, comparing OpenAI's Ada v2 and `SentenceTransfomer`
 1. Generates OpenAI [`text-embedding-ada-002`](https://openai.com/blog/new-and-improved-embedding-model/) embeddings using the OpenAI API.
 2. Generates `SentenceTransformer` embeddings using the `ST_EMBEDDING_MODEL` defined in `config.py`. You can change this to any encoder model from their [docs](https://www.sbert.net/docs/pretrained_models.html). Default: `all-mpnet-base-v2`
 
+You can also download the embeddings I've generated for [NIV](https://www.dropbox.com/s/78jm8wh4cqhvwwv/NIV_clean.parquet?dl=1), [NKJV](https://www.dropbox.com/s/wd3kxh012jfhjya/NKJV_clean.parquet?dl=1).
+
 # Usage
 After `make embeddings`,
 
