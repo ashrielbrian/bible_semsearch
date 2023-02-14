@@ -10,7 +10,10 @@ DATA = {
 }
 
 class Translation(enum.Enum):
-    NIV = "NIV"
+    # streamlit Cloud community only allows up to 1GB storage,
+    # so we'll only be loading the NKJV version here.
+    # Feel free to uncomment NIV below if you're running locally.
+    # NIV = "NIV"
     NKJV = "NKJV"
 
 @st.cache_resource
@@ -30,8 +33,7 @@ query = st.text_input("Search:", placeholder="What is the meaning of life?")
 
 
 if query:
-    print(translation, emb_space)
-    with st.spinner('Searching verses with the closest meaning..'):
+    with st.spinner(f'Searching verses in {translation} with {emb_space}...'):
         top_results = engines[translation].search(query, emb_type=EmbeddingType[emb_space])
     
     for result in top_results:
