@@ -7,3 +7,4 @@ torch
 sentence-transformers
 python-dotenv
 tenacity
+streamlit
