@@ -8,3 +8,4 @@ sentence-transformers
 python-dotenv
 tenacity
 streamlit
+pinecone-client

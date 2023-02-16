@@ -9,5 +9,8 @@ init:
 embeddings:
 	chmod +x ./encode.sh && ./encode.sh
 
+index:
+	chmod +x ./pinecone.sh && ./pinecone.sh
+
 clean:
 	rm -rf ${VENV}
