@@ -1,21 +1,45 @@
+import os
 import enum
 from pathlib import Path
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Union
 
 import torch
 import pandas as pd
+import pinecone
+from pinecone.core.client.model.query_response import QueryResponse
+from dotenv import load_dotenv
 
 from sentence_transformers import SentenceTransformer
 from embeddings import get_single_embedding
 from config import ST_EMBEDDING_MODEL
 
 
+load_dotenv()
+pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENV"))
+
+
 class EmbeddingType(enum.Enum):
     Ada = "oai_embeddings"
     SentenceTransfomer = "st_embeddings"
 
+class Engine:
+    def _get_query_vec(self, query: str, emb_type: EmbeddingType) -> torch.Tensor:
+        if emb_type == EmbeddingType.Ada:
+            return torch.tensor(get_single_embedding(query))
+        elif emb_type == EmbeddingType.SentenceTransfomer:
+            return self.model.encode(query, convert_to_tensor=True)
+        else:
+            raise Exception(f"No such embedding: {emb_type}")
+    
+    def search(
+        self, 
+        query: str,
+        emb_type: EmbeddingType = EmbeddingType.Ada,
+        only_text: bool = False
+    ):
+        raise NotImplementedError
 
-class SearchEngine:
+class SearchEngine(Engine):
     """Supports SentenceTransformer encoder model and OpenAI's Ada v2 embeddings."""
 
     def __init__(self, path: Path):
@@ -24,12 +48,7 @@ class SearchEngine:
         self._device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def _get_query_vec(self, query: str, emb_type: EmbeddingType):
-        if emb_type == EmbeddingType.Ada:
-            return torch.tensor(get_single_embedding(query)).to(self._device)
-        elif emb_type == EmbeddingType.SentenceTransfomer:
-            return self.model.encode(query, convert_to_tensor=True).to(self._device)
-        else:
-            raise Exception(f"No such embedding: {emb_type}")
+        return super()._get_query_vec(query, emb_type).to(self._device)
 
     def _get_embeddings(self, emb_type: EmbeddingType):
         return torch.tensor(self.df[emb_type.value]).to(self._device)
@@ -59,3 +78,52 @@ class SearchEngine:
         return self._get_search_results(
             query_vec, _embeddings, source=self.df, only_text=only_text
         )
+
+class PineconeSearchEngine(Engine):
+    def __init__(self, path: Path, index: Union[str, List]) -> None:
+
+        self.df = pd.read_csv(path)
+        self.model = SentenceTransformer(ST_EMBEDDING_MODEL)
+        self._get_index(index)
+
+    def _get_query_vec(self, query: str, emb_type: EmbeddingType) -> List[float]:
+        return super()._get_query_vec(query, emb_type).tolist()
+
+    def _get_index(self, index: Union[str, List]):
+        index = [index] if isinstance(index, str) else index
+        self.indices = {n: pinecone.Index(n) for n in index}
+    
+    def _get_search_results(
+        self, 
+        query_vec: List[float], 
+        emb_type: EmbeddingType, 
+        translation: str,
+        only_text: bool,
+        k: int = 10,
+    ):
+        index = self.indices['ada' if emb_type == EmbeddingType.Ada else "mpnet"]
+        results = index.query(query_vec, namespace=translation, top_k=k)
+        return self._convert(results, only_text)
+
+    def _convert(self, results: QueryResponse, only_text: bool) -> List[Tuple[Any]]:
+        """Maps Pinecone results to the book, chapter and verse"""
+        if not results or not results.matches: 
+            return []
+
+        res = self.df.iloc[[int(r['id']) for r in results.matches]][
+            ["text"] if only_text else ["book", "chapter", "verse", "text"]
+        ]
+        return list(res.itertuples(index=None, name=None))
+
+    def search(
+        self,
+        query: str,
+        emb_type: EmbeddingType = EmbeddingType.Ada,
+        only_text: bool = False,
+        translation: str = "NKJV",
+    ):
+        query_vec = self._get_query_vec(query, emb_type)
+        return self._get_search_results(query_vec, emb_type, translation, only_text)
+
+        
+        

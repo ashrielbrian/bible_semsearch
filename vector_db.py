@@ -12,10 +12,6 @@ from dotenv import load_dotenv
 load_dotenv()
 pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENV"))
 
-@dataclass
-class PineconeIndex:
-    pass
-
 INDEX = {
     # each index requires a new pinecone pod. free tier only allows a single pod.
     # "mpnet": "st_embeddings"
@@ -42,9 +38,11 @@ def create_index(index_name: str, dims: int, delete_if_exists = True):
     
     return pinecone.Index(index_name=index_name)
 
+
 def batch_upsert(index: pinecone.Index, df: pd.DataFrame, column: str, namespace: str):
     for batch_df in batcher(df):
         index.upsert(vectors=zip(batch_df.index.values.astype(str), batch_df[column]), namespace=namespace)
+
 
 def build(name: str, fp: Path, delete_if_exists: bool):
     df = pd.read_parquet(fp, engine="fastparquet")
@@ -53,6 +51,7 @@ def build(name: str, fp: Path, delete_if_exists: bool):
 
     for key, index in indices.items():
         batch_upsert(index, df, column=INDEX[key], namespace=name)
+
 
 if __name__ == '__main__':
     import argparse
