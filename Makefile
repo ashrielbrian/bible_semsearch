@@ -7,10 +7,10 @@ init:
 	${PYTHON} -m pip install -U -r requirements.txt
 
 embeddings:
-	chmod +x ./encode.sh && ./encode.sh
+	chmod +x ./scripts/encode.sh && ./scripts/encode.sh
 
 index:
-	chmod +x ./pinecone.sh && ./pinecone.sh
+	chmod +x ./scripts/pinecone.sh && ./scripts/pinecone.sh
 
 clean:
 	rm -rf ${VENV}
