@@ -42,26 +42,26 @@ class Engine:
 class SearchEngine(Engine):
     """Supports SentenceTransformer encoder model and OpenAI's Ada v2 embeddings."""
 
-    def __init__(self, path: Path):
-        self.df = pd.read_parquet(path, engine="fastparquet")
+    def __init__(self, named_paths: Dict[str, Path]):
+        self.df = {name: pd.read_parquet(path, engine="fastparquet") for name, path in named_paths.items()}
         self.model = SentenceTransformer(ST_EMBEDDING_MODEL)
         self._device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def _get_query_vec(self, query: str, emb_type: EmbeddingType):
         return super()._get_query_vec(query, emb_type).to(self._device)
 
-    def _get_embeddings(self, emb_type: EmbeddingType):
-        return torch.tensor(self.df[emb_type.value]).to(self._device)
+    def _get_embeddings(self, emb_type: EmbeddingType, translation: str):
+        return torch.tensor(self.df[translation][emb_type.value]).to(self._device)
 
     def _get_search_results(
-        self, query_vec: torch.Tensor, embeddings: torch.Tensor, source: pd.DataFrame, k: int = 10, only_text=False
+        self, query_vec: torch.Tensor, embeddings: torch.Tensor, translation: str, k: int = 10, only_text=False
     ) -> List[Verse]:
         """
         Cosine similarity: Ada embeddings are L2 normalized, so only require a dot product
         between the query and embedding vectors.
         """
         results = torch.topk(torch.matmul(embeddings, query_vec), k)
-        results = source.loc[results.indices.cpu()][
+        results = self.df[translation].loc[results.indices.cpu()][
             ["text"] if only_text else ["book", "chapter", "verse", "text"]
         ]
         return [
@@ -74,20 +74,23 @@ class SearchEngine(Engine):
         query: str,
         emb_type: EmbeddingType = EmbeddingType.Ada,
         only_text: bool = False,
+        translation: str = "NKJV" 
     ) -> List[Verse]:
         query_vec = self._get_query_vec(query, emb_type)
-        _embeddings = self._get_embeddings(emb_type)
+        _embeddings = self._get_embeddings(emb_type, translation)
 
         return self._get_search_results(
-            query_vec, _embeddings, source=self.df, only_text=only_text
+            query_vec, _embeddings, translation, only_text=only_text
         )
 
 class PineconeSearchEngine(Engine):
     def __init__(self, named_paths: Dict[str, Path], index: Union[str, List]) -> None:
 
         self.df = {name: pd.read_csv(path) for name, path in named_paths.items()}
-        self.model = SentenceTransformer(ST_EMBEDDING_MODEL)
         self._get_index(index)
+
+        # only Ada in present in Pinecone due to free tier limitations
+        # self.model = SentenceTransformer(ST_EMBEDDING_MODEL)
 
     def _get_query_vec(self, query: str, emb_type: EmbeddingType) -> List[float]:
         return super()._get_query_vec(query, emb_type).tolist()
