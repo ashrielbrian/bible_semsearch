@@ -7,11 +7,11 @@ from search import PineconeSearchEngine, SearchEngine, EmbeddingType
 PINECONE_DEPLOYMENT = True
 
 DATA = {
-    "NKJV": "data/NKJV_fixed.csv",
-    "NIV": "data/NIV_fixed.csv"
+    "NKJV": "https://www.dropbox.com/s/6jng3ci5jntm3je/NKJV_fixed.csv?dl=1",
+    "NIV": "https://www.dropbox.com/s/4en48g6fnbckxqy/NIV_fixed.csv?dl=1"
 } if PINECONE_DEPLOYMENT else {
-    "NKJV": "data/NKJV_clean.parquet", # "https://www.dropbox.com/s/wd3kxh012jfhjya/NKJV_clean.parquet?dl=1",
-    "NIV": "data/NIV_clean.parquet" # "https://www.dropbox.com/s/78jm8wh4cqhvwwv/NIV_clean.parquet?dl=1",
+    "NKJV": "https://www.dropbox.com/s/wd3kxh012jfhjya/NKJV_clean.parquet?dl=1",
+    "NIV": "https://www.dropbox.com/s/78jm8wh4cqhvwwv/NIV_clean.parquet?dl=1",
 }
 
 class Translation(enum.Enum):
