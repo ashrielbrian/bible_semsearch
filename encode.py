@@ -1,7 +1,7 @@
 import os
 import csv
 from pathlib import Path
-from typing import Iterator, List, Any
+from typing import Iterator, List, Any, Optional
 from dataclasses import dataclass
 
 import pandas as pd
@@ -17,30 +17,30 @@ model = get_st_model()
 
 
 @dataclass
-class Row:
-    book: int
-    chapter: int
-    verse: int
+class Verse:
+    book: Optional[int]
+    chapter: Optional[int]
+    verse: Optional[int]
     text: str
 
 
 @dataclass
-class RowEmbeddings(Row):
+class VerseEmbeddings(Verse):
     oai_embeddings: List[float]
     st_embeddings: List[float]
 
 
-def _get_row(fp: Path) -> Iterator[Row]:
+def _get_row(fp: Path) -> Iterator[Verse]:
     with fp.open() as f:
         for row in csv.DictReader(f):
-            yield Row(
+            yield Verse(
                 int(row["book"]), int(row["chapter"]), int(row["verse"]), row["text"]
             )
 
 
 def generate_embeddings(fp: Path):
     for row in _get_row(fp):
-        yield RowEmbeddings(
+        yield VerseEmbeddings(
             row.book,
             row.chapter,
             row.verse,
@@ -50,12 +50,12 @@ def generate_embeddings(fp: Path):
         )
 
 
-def _read_row_batches(fp: Path, batch_size: int = 50) -> Iterator[List[Row]]:
+def _read_row_batches(fp: Path, batch_size: int = 50) -> Iterator[List[Verse]]:
     with fp.open() as f:
         batches = []
         for row in csv.DictReader(f):
             batches.append(
-                Row(
+                Verse(
                     int(row["book"]),
                     int(row["chapter"]),
                     int(row["verse"]),
@@ -72,14 +72,14 @@ def _read_row_batches(fp: Path, batch_size: int = 50) -> Iterator[List[Row]]:
 
 def generate_embeddings_batch(
     fp: Path, batch_size: int = 50
-) -> Iterator[List[RowEmbeddings]]:
+) -> Iterator[List[VerseEmbeddings]]:
     for batch in _read_row_batches(fp, batch_size):
         try:
             batch_text = [row.text for row in batch]
             ada_embs = get_multi_embeddings(batch_text)
             st_embs = get_st_transformer_embeddings(batch_text, model)
             yield [
-                RowEmbeddings(
+                VerseEmbeddings(
                     row.book, row.chapter, row.verse, row.text, ada_emb, st_emb
                 )
                 for ada_emb, st_emb, row in zip(ada_embs, st_embs, batch)

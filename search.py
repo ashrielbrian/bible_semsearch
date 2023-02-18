@@ -5,14 +5,14 @@ from typing import List, Tuple, Any, Union
 
 import torch
 import pandas as pd
+from dotenv import load_dotenv
 import pinecone
 from pinecone.core.client.model.query_response import QueryResponse
-from dotenv import load_dotenv
-
 from sentence_transformers import SentenceTransformer
+
 from embeddings import get_single_embedding
 from config import ST_EMBEDDING_MODEL
-
+from encode import Verse
 
 load_dotenv()
 pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENV"))
@@ -36,7 +36,7 @@ class Engine:
         query: str,
         emb_type: EmbeddingType = EmbeddingType.Ada,
         only_text: bool = False
-    ):
+    ) -> List[Verse]:
         raise NotImplementedError
 
 class SearchEngine(Engine):
@@ -55,7 +55,7 @@ class SearchEngine(Engine):
 
     def _get_search_results(
         self, query_vec: torch.Tensor, embeddings: torch.Tensor, source: pd.DataFrame, k: int = 10, only_text=False
-    ) -> List[Tuple[Any]]:
+    ) -> List[Verse]:
         """
         Cosine similarity: Ada embeddings are L2 normalized, so only require a dot product
         between the query and embedding vectors.
@@ -64,14 +64,17 @@ class SearchEngine(Engine):
         results = source.loc[results.indices.cpu()][
             ["text"] if only_text else ["book", "chapter", "verse", "text"]
         ]
-        return [tuple(np_row) for np_row in list(results.values)]
+        return [
+            Verse(None, None, None, np_row[0]) if only_text else Verse(*np_row)
+            for np_row in list(results.values)
+        ]
 
     def search(
         self,
         query: str,
         emb_type: EmbeddingType = EmbeddingType.Ada,
         only_text: bool = False,
-    ):
+    ) -> List[Verse]:
         query_vec = self._get_query_vec(query, emb_type)
         _embeddings = self._get_embeddings(emb_type)
 
@@ -100,12 +103,12 @@ class PineconeSearchEngine(Engine):
         translation: str,
         only_text: bool,
         k: int = 10,
-    ):
+    ) -> List[Verse]:
         index = self.indices['ada' if emb_type == EmbeddingType.Ada else "mpnet"]
         results = index.query(query_vec, namespace=translation, top_k=k)
         return self._convert(results, only_text)
 
-    def _convert(self, results: QueryResponse, only_text: bool) -> List[Tuple[Any]]:
+    def _convert(self, results: QueryResponse, only_text: bool) -> List[Verse]:
         """Maps Pinecone results to the book, chapter and verse"""
         if not results or not results.matches: 
             return []
@@ -113,7 +116,10 @@ class PineconeSearchEngine(Engine):
         res = self.df.iloc[[int(r['id']) for r in results.matches]][
             ["text"] if only_text else ["book", "chapter", "verse", "text"]
         ]
-        return list(res.itertuples(index=None, name=None))
+        return [
+            Verse(None, None, None, np_row[0]) if only_text else Verse(*np_row)
+            for np_row in res.itertuples(index=None, name=None)
+        ]
 
     def search(
         self,
@@ -121,7 +127,7 @@ class PineconeSearchEngine(Engine):
         emb_type: EmbeddingType = EmbeddingType.Ada,
         only_text: bool = False,
         translation: str = "NKJV",
-    ):
+    ) -> List[Verse]:
         query_vec = self._get_query_vec(query, emb_type)
         return self._get_search_results(query_vec, emb_type, translation, only_text)
 
