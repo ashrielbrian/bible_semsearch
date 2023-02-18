@@ -1,7 +1,7 @@
 import os
 import enum
 from pathlib import Path
-from typing import List, Tuple, Any, Union
+from typing import List, Dict, Union
 
 import torch
 import pandas as pd
@@ -83,9 +83,9 @@ class SearchEngine(Engine):
         )
 
 class PineconeSearchEngine(Engine):
-    def __init__(self, path: Path, index: Union[str, List]) -> None:
+    def __init__(self, named_paths: Dict[str, Path], index: Union[str, List]) -> None:
 
-        self.df = pd.read_csv(path)
+        self.df = {name: pd.read_csv(path) for name, path in named_paths.items()}
         self.model = SentenceTransformer(ST_EMBEDDING_MODEL)
         self._get_index(index)
 
@@ -106,14 +106,14 @@ class PineconeSearchEngine(Engine):
     ) -> List[Verse]:
         index = self.indices['ada' if emb_type == EmbeddingType.Ada else "mpnet"]
         results = index.query(query_vec, namespace=translation, top_k=k)
-        return self._convert(results, only_text)
+        return self._convert(results, translation, only_text)
 
-    def _convert(self, results: QueryResponse, only_text: bool) -> List[Verse]:
+    def _convert(self, results: QueryResponse, translation: str, only_text: bool) -> List[Verse]:
         """Maps Pinecone results to the book, chapter and verse"""
         if not results or not results.matches: 
             return []
 
-        res = self.df.iloc[[int(r['id']) for r in results.matches]][
+        res = self.df[translation].iloc[[int(r['id']) for r in results.matches]][
             ["text"] if only_text else ["book", "chapter", "verse", "text"]
         ]
         return [
