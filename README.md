@@ -26,15 +26,28 @@ Semantic search of the Bible, comparing OpenAI's Ada v2 and `SentenceTransfomer`
 
 You can also download the embeddings I've generated for [NIV](https://www.dropbox.com/s/78jm8wh4cqhvwwv/NIV_clean.parquet?dl=1), [NKJV](https://www.dropbox.com/s/wd3kxh012jfhjya/NKJV_clean.parquet?dl=1).
 
+
+### 3. **[Optional]** Pinecone Index
+
+To build a Pinecone index, you will need a `PINECONE_API_KEY` and `PINECONE_ENV` in your `.env` file. Then, simply run:
+
+```bash
+    make index
+```
+
 # Usage
 After `make embeddings`,
 
 ```python
     from search import SearchEngine, EmbeddingType
 
-    nkjv_engine = SearchEngine(path="data/NKJV_clean.parquet")
-    top_verses = nkjv_engine.search(
-        "what is the meaning of life?", 
+    engine = SearchEngine{
+        "NKJV": "data/NKJV_clean.parquet",
+        "NIV": "data/NIV_clean.parquet"
+    }
+    top_verses = engine.search(
+        "what is the meaning of life?",
+        translation="NKJV",
         emb_type=EmbeddingType.SentenceTransfomer, 
         only_text=True
     )
@@ -56,6 +69,9 @@ After `make embeddings`,
     ]
 ```
 
+# Deployment
+
+If you are self-hosting the app on a somewhat powerful machine, you can set `PINECONE_DEPLOYMENT = False` in `app.py`, This uses the parquet files as the embedding store. Otherwise, if you're running on a tiny pod with limited computed (e.g. Streamlit Cloud), then you'll want to make use of a vector database, in this case, Pinecone.
 
 # Data
 - Bible versions (NIV, NKJV) are sourced from [my-bible-study](http://my-bible-study.appspot.com)
