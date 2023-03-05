@@ -13,14 +13,10 @@ from sentence_transformers import SentenceTransformer
 from embeddings import get_single_embedding
 from config import ST_EMBEDDING_MODEL
 from encode import Verse
+from models import EmbeddingType
 
 load_dotenv()
 pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment=os.getenv("PINECONE_ENV"))
-
-
-class EmbeddingType(enum.Enum):
-    Ada = "oai_embeddings"
-    SentenceTransfomer = "st_embeddings"
 
 class Engine:
     def _get_query_vec(self, query: str, emb_type: EmbeddingType) -> torch.Tensor:

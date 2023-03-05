@@ -1,8 +1,7 @@
 import os
 import csv
 from pathlib import Path
-from typing import Iterator, List, Any, Optional
-from dataclasses import dataclass
+from typing import Iterator, List, Any
 
 import pandas as pd
 
@@ -11,23 +10,10 @@ from embeddings import (
     get_multi_embeddings,
     get_st_transformer_embeddings,
 )
+from models import Verse, VerseEmbeddings
 from config import get_st_model
 
 model = get_st_model()
-
-
-@dataclass
-class Verse:
-    book: Optional[int]
-    chapter: Optional[int]
-    verse: Optional[int]
-    text: str
-
-
-@dataclass
-class VerseEmbeddings(Verse):
-    oai_embeddings: List[float]
-    st_embeddings: List[float]
 
 
 def _get_row(fp: Path) -> Iterator[Verse]:
