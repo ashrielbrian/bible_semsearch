@@ -1,0 +1,20 @@
+# pinecone index on the free tier auto deletes after 1 week of inactivity.
+# workflow runs every 4 days to query the index to keep it from inactivity.
+name: pinecone_scheduled_query
+on:
+  schedule:
+    - cron: "0 0 */5 * *" # midnight every 5 days
+
+jobs:
+  send_request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Query pinecone index
+        run: |
+          pip3 install pinecone-client==2.2.1 pandas==1.5.3 python-dotenv
+          python3 tests/query_pinecone.py
+        env:
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_REGION: ${{ secrets.PINECONE_REGION }}
