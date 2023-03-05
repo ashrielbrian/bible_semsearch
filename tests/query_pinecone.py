@@ -1,5 +1,8 @@
-import os
+import os, sys
 from typing import List
+
+# adds current dir to the PYTHONPATH 
+sys.path.append(".")
 
 from dotenv import load_dotenv
 import pandas as pd
