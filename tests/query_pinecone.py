@@ -2,7 +2,7 @@ import os, sys
 from typing import List
 
 # adds current dir to the PYTHONPATH 
-sys.path.append(".")
+sys.path.insert(0, ".")
 
 from dotenv import load_dotenv
 import pandas as pd
@@ -39,6 +39,7 @@ def _convert(results: QueryResponse, translation: str) -> List[Verse]:
     if not results or not results.matches: 
         return []
 
+    print(results.matches)
     res = df.iloc[[int(r['id']) for r in results.matches]][["book", "chapter", "verse", "text"]]
     return [Verse(*np_row) for np_row in res.itertuples(index=None, name=None)]
 
@@ -52,4 +53,5 @@ def query_index(query_vec: List):
 
 if __name__ == "__main__":
     sample_vec = load_sample_vector("tests/sample_vector.txt")
+    print(f"Sample vector has {len(sample_vec)} dims")
     print(query_index(sample_vec))
