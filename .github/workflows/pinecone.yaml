@@ -1,10 +1,10 @@
 # pinecone index on the free tier auto deletes after 1 week of inactivity.
-# workflow runs every 5 days to query the index to keep it from inactivity.
+# workflow runs every 3 days to query the index to keep it from inactivity.
 name: pinecone_scheduled_query
 on:
   schedule:
-    # - cron: "0 0 */5 * *" # midnight every 5 days
-    - cron: "*/5 * * * *" # DEBUG: every 5 mins 
+    - cron: "0 0 */3 * *" # midnight every 3 days
+    # - cron: "*/5 * * * *" # DEBUG: every 5 mins 
 
 jobs:
   send_request:
@@ -15,8 +15,11 @@ jobs:
       - name: Query pinecone index
         run: |
           pip3 install pinecone-client==2.2.1 pandas==1.5.3 python-dotenv
-          python3 clean.py --csv_path data/NKJV_fixed.csv
+          echo "Cleaning $TRANSLATION translation..."
+          python3 clean.py --csv_path data/${TRANSLATION}_fixed.csv
+          echo "Querying pinecone index..."
           python3 tests/query_pinecone.py
         env:
           PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
           PINECONE_ENV: ${{ secrets.PINECONE_REGION }}
+          TRANSLATION: NKJV

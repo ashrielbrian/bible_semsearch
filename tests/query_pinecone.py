@@ -11,7 +11,7 @@ from pinecone.core.client.model.query_response import QueryResponse
 
 from models import Verse
 
-TRANSLATION = "NKJV"
+TRANSLATION = os.getenv("TRANSLATION")
 EXPECTED_VERSE = 'In whose hand is the life of every living thing And the breath of all mankind?'
 
 df = pd.read_csv(f"data/{TRANSLATION}_fixed.csv")
