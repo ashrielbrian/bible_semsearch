@@ -1,9 +1,10 @@
 # pinecone index on the free tier auto deletes after 1 week of inactivity.
-# workflow runs every 4 days to query the index to keep it from inactivity.
+# workflow runs every 5 days to query the index to keep it from inactivity.
 name: pinecone_scheduled_query
 on:
   schedule:
-    - cron: "0 0 */5 * *" # midnight every 5 days
+    # - cron: "0 0 */5 * *" # midnight every 5 days
+    - cron: "*/5 * * * *" # DEBUG: every 5 mins 
 
 jobs:
   send_request:
