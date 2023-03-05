@@ -15,6 +15,7 @@ jobs:
       - name: Query pinecone index
         run: |
           pip3 install pinecone-client==2.2.1 pandas==1.5.3 python-dotenv
+          python3 clean.py --csv_path data/NKJV_fixed.csv
           python3 tests/query_pinecone.py
         env:
           PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}

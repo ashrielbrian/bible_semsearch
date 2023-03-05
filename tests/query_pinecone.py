@@ -52,7 +52,7 @@ def query_index(query_vec: List):
     return top_verses
 
 if __name__ == "__main__":
-    print(f"Loaded dataframe: {len(df)} rows")
+    print(f"Loaded {TRANSLATION} dataframe: {len(df)} rows")
     sample_vec = load_sample_vector("tests/sample_vector.txt")
     print(f"Sample vector has {len(sample_vec)} dims")
     print(query_index(sample_vec))
