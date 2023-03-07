@@ -1,10 +1,9 @@
 
 # Introduction
 
-Semantic search of the Bible, comparing OpenAI's Ada v2 and `SentenceTransfomer` embeddings.
+Search the NIV and NKJV semantically [here](https://bible-semsearch.streamlit.app/). 
 
-*Inspired by Christoffer Rehn's* [`bible-search`](https://github.com/hoffa/bible-search).
-
+Generates OpenAI Ada v2 and `all-mpnet-base-v2` embeddings for the NIV and NKJV Bible translations, and makes it searchable with a simple API.
 
 # Getting Started
 
@@ -76,7 +75,8 @@ After `make embeddings`,
 
 If you are self-hosting the app on a somewhat powerful machine, you can set `PINECONE_DEPLOYMENT = False` in `app.py`, This uses the parquet files as the embedding store. Otherwise, if you're running on a tiny pod with limited computed (e.g. Streamlit Cloud), then you'll want to make use of a vector database, in this case, Pinecone.
 
-# Data
+# Acknowledgements
 - Bible versions (NIV, NKJV) are sourced from [my-bible-study](http://my-bible-study.appspot.com)
+- *Inspired by Christoffer Rehn's* [`bible-search`](https://github.com/hoffa/bible-search).
 
 *Soli Deo Gloria.*
